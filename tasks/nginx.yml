@@ -1,0 +1,32 @@
+---
+
+- name: Install NGINX
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+
+- name: Remove default config file
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Deploy NGINX config
+  ansible.builtin.template:
+    src: nginx_proxmox.conf.j2
+    dest: /etc/nginx/conf.d/proxmox.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Restart NGINX
+
+- name: Deploy nginx.service file
+  ansible.builtin.template:
+    src: nginx.service.j2
+    dest: /lib/systemd/system/nginx.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload Deamon
+    - Restart NGINX

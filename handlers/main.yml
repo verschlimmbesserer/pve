@@ -1,0 +1,24 @@
+---
+# handlers file for proxmox-ve
+- name: Restart NGINX
+  ansible.builtin.systemd_service:
+    name: nginx.service
+    state: restarted
+    enabled: true
+
+- name: Restart Networking
+  ansible.builtin.systemd_service:
+    name: networking.service
+    state: restarted
+    enabled: true
+
+- name: Reload Deamon
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+
+- name: Reload Network config
+  ansible.builtin.shell:
+    cmd: pvesh set /nodes/{{ inventory_hostname }}/network
+    executable: /bin/bash
+  register: network_config_reload
+  changed_when: network_config_reload.rc != 0

@@ -1,0 +1,79 @@
+---
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  when: inventory_hostname != ansible_hostname
+
+- name: Add hostname to /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '{{ inventory_hostname }}$'
+    line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}"
+
+- name: Configure Proxmox VE No-Subscription Repository
+  ansible.builtin.deb822_repository:
+    name: pve
+    types: deb
+    uris: "{{ pve_repository_url }}"
+    suites: '{{ ansible_distribution_release }}'
+    components: pve-no-subscription
+    architectures: amd64
+    signed_by: "{{ pve_repository_gpg_key }}"
+    state: "{{ pve_repo_state }}"
+
+- name: Update repositories
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Upgrade all apt packages
+  ansible.builtin.apt:
+    upgrade: full
+    force_apt_get: false
+
+- name: Install proxmox-ve kernal
+  ansible.builtin.apt:
+    name: proxmox-default-kernel
+    state: "{{ pve_state }}"
+
+- name: Reboot system
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  when: ('proxmox-default-kernel' not in ansible_facts.packages)
+
+- name: Wait for system to start
+  ansible.builtin.wait_for_connection:
+    connect_timeout: 5
+    delay: 0
+    sleep: 1
+    timeout: 600
+
+- name: Install proxmox-ve
+  ansible.builtin.apt:
+    name: ["proxmox-ve", "postfix", "open-iscsi", "chrony"]
+    state: present
+  register: pve_installed
+
+- name: Remove old Debian kernel
+  ansible.builtin.apt:
+    name: ["linux-image-amd64", "linux-image-6.1*"]
+    state: absent
+
+- name: Update grub
+  ansible.builtin.command: /usr/sbin/update-grub
+  register: update_grub_output
+  changed_when: update_grub_output.rc != 0
+
+- name: Remove os-prober
+  ansible.builtin.apt:
+    name: os-prober
+    state: present
+
+- name: Remove pve-enterprise.list Repository
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    state: absent
+
+- name: Update Repositories
+  ansible.builtin.apt:
+    update_cache: true

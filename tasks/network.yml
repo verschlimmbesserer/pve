@@ -1,0 +1,28 @@
+---
+
+- name: Install ifupdown2
+  ansible.builtin.apt:
+    name: ifupdown2
+    state: present
+
+- name: Set variables for brigde interface
+  ansible.builtin.set_fact:
+    bridged_interface: >-
+      {%- if ansible_default_ipv4.type == 'bridge' -%}
+      {%- set interface_info = lookup('ansible.builtin.vars', 'ansible_' + ansible_default_ipv4.interface) -%}
+      {%- set bi = interface_info.interfaces[0] -%}
+      {%- else -%}
+      {%- set bi = ansible_default_ipv4.interface -%}
+      {%- endif -%}
+      {{ bi }}
+
+- name: Configure Bridge Network
+  ansible.builtin.template:
+    src: bridge.j2
+    dest: /etc/network/interfaces.new
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Restart Networking
+    - Reload Network config

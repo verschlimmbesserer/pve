@@ -1,0 +1,29 @@
+---
+# defaults file for proxmox-ve
+pve_configure_network: true
+pve_configure_nginx: false
+pve_configure_firewall: false
+# pve_fqdn: "{{ inventory_hostname }}"
+# pve_vswitch_vlans:
+#   - vswitch_vlanid: 4002
+#     bridge_stp: "off"
+#     bridge_fd: 0
+#     mtu: 1400
+pve_firewall_rules:
+  - rule: allow
+    port: 8006
+    proto: tcp
+  - rule: allow
+    port: 67
+    proto: udp
+  - rule: allow
+    port: 68
+    proto: udp
+  - rule: allow
+    port: 67
+    proto: udp
+    direction: out
+  - rule: allow
+    port: 68
+    proto: udp
+    direction: out

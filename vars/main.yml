@@ -1,0 +1,6 @@
+---
+# vars file for proxmox-ve
+pve_repository_url: "http://download.proxmox.com/debian/pve"
+pve_repository_gpg_key: "https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg"
+pve_state: present
+pve_repo_state: present
